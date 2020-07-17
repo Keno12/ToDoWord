@@ -136,6 +136,7 @@ namespace ToDoWord
 
                 }    
                 
+
              docText = regexText.Replace(docText, "121212");
 
                 using (StreamWriter sw = new StreamWriter(doc.MainDocumentPart.GetStream(FileMode.Create)))
