@@ -1,8 +1,10 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace ToDoWord
@@ -12,10 +14,10 @@ namespace ToDoWord
         public static void Main(string[] args)
         {
 
-            Console.WriteLine("请输入文件路径:");
+            Console.WriteLine("请输入文件夹路径:");
             //D:\迅雷下载
-            string filePath = CheckPath();
-            //string filePath = @"D:\迅雷下载";
+            //string filePath = CheckPath();
+            string filePath = @"D:\迅雷下载";
             Console.WriteLine("-----------------------");
             Console.WriteLine("将所有的.doc文件换为.docx");
             DealDocFiles(filePath);
@@ -51,8 +53,8 @@ namespace ToDoWord
             {
                 i++;
                 Console.WriteLine("正在处理第:{0}个.docx文件", i);
-                DealWithWord(file);
-                FindReplaceText(file);
+                //DealWithWord(file);
+               FindReplaceText(file);
             }
             Console.WriteLine("-----------------------");
             Console.WriteLine();
@@ -62,19 +64,39 @@ namespace ToDoWord
         //deal with doc
         private static void DealDocFiles(string filePath)
         {
-            string[] files = Directory.GetFiles(filePath, @"*.doc");
-            Console.WriteLine("检测到共:{0}个.doc文件", files.Count());
-            int i = 0;
-            foreach (string file in files)
+            string[] docfiles = Directory.GetFiles(filePath, "*.doc");
+            List<string> relDocFils = new List<string>();
+            foreach (var docfile in docfiles)
             {
+                if (docfile.Contains(".docx"))
+                {
+                    continue;
+                }
+                relDocFils.Add(docfile);
+            }
+            string[] docxfiles = Directory.GetFiles(filePath, "*.docx");
+            Console.WriteLine("检测到共:{0}个.doc文件", relDocFils.Count());
+
+            int i = 0;
+            StringBuilder sb = new StringBuilder();
+            foreach (string file in relDocFils)
+            {   
+                string fileName = file + "x";
+                if (docxfiles.Contains(fileName))
+                {
+                    sb.AppendLine(file);
+                    continue;
+                }
                 i++;
                 Console.WriteLine("正在处理第:{0}个.doc文件", i);
                 TranWordDocToDocx(file);
-
             }
+            Console.WriteLine();
+            Console.WriteLine("所有.doc文件处理完成,其中这些.doc文件已存在对应的.docx文件未做处理");
+            Console.WriteLine("-----------------------");
+            Console.Write(sb);
             Console.WriteLine("-----------------------");
             Console.WriteLine();
-            Console.WriteLine("所有.doc文件处理完成!");
         }
 
         private static void DealWithWord(string path)
@@ -107,8 +129,14 @@ namespace ToDoWord
                     docText = sr.ReadToEnd();
                 }
 
-                Regex regexText = new Regex(@"[a-zA-z]+://[^\s]*baidu[^\s]*", RegexOptions.IgnoreCase);
-                docText = regexText.Replace(docText, "");
+                Regex regexText = new Regex("<w:hyperlink[\\w\\W]*history=\\\"(\\d|-\\d)\\\">");
+                var matches = regexText.Matches(docText);
+                foreach (Match item in matches)
+                {
+
+                }    
+                
+             docText = regexText.Replace(docText, "121212");
 
                 using (StreamWriter sw = new StreamWriter(doc.MainDocumentPart.GetStream(FileMode.Create)))
                 {
