@@ -1,5 +1,6 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -13,22 +14,26 @@ namespace ToDoWord
     {
         public static void Main(string[] args)
         {
-
+            //01 check file dir
             Console.WriteLine("请输入文件夹路径:");
-            //D:\迅雷下载
             //string filePath = CheckPath();
             string filePath = @"D:\迅雷下载";
             Console.WriteLine("-----------------------");
+
+            //02 trasn doc to docx
             Console.WriteLine("将所有的.doc文件换为.docx");
             DealDocFiles(filePath);
+
+            //03 deal with docx file
             Console.WriteLine("开始处理.docx文件");
             GetFiles(filePath);
+
+            //04 end out msg
             Console.WriteLine();
             Console.WriteLine("点击任意键退出");
             Console.ReadKey();
         }
 
-        // 检查文件路径是否正确
         private static string CheckPath()
         {
             string path = Console.ReadLine();
@@ -43,7 +48,7 @@ namespace ToDoWord
             }
         }
 
-        //找到文件夹下的所有文件
+        //get all files
         private static void GetFiles(string filePath)
         {
             string[] files = Directory.GetFiles(filePath, @"*.docx");
@@ -53,8 +58,8 @@ namespace ToDoWord
             {
                 i++;
                 Console.WriteLine("正在处理第:{0}个.docx文件", i);
-                //DealWithWord(file);
-               FindReplaceText(file);
+                DealWithWord(file);
+                //FindReplaceText(file);
             }
             Console.WriteLine("-----------------------");
             Console.WriteLine();
@@ -80,7 +85,7 @@ namespace ToDoWord
             int i = 0;
             StringBuilder sb = new StringBuilder();
             foreach (string file in relDocFils)
-            {   
+            {
                 string fileName = file + "x";
                 if (docxfiles.Contains(fileName))
                 {
@@ -101,6 +106,30 @@ namespace ToDoWord
 
         private static void DealWithWord(string path)
         {
+            //using (WordprocessingDocument doc = WordprocessingDocument.Open(path, true))
+            //{
+            //    MainDocumentPart mainPart = doc.MainDocumentPart;
+            //    Hyperlink hLink = mainPart.Document.Body.Descendants<Hyperlink>().FirstOrDefault();
+            //    if (hLink != null)
+            //    {
+            //        // get hyperlink's relation Id (where path stores)
+            //        string relationId = hLink.Id;
+            //        if (relationId != string.Empty)
+            //        {
+            //            // get current relation
+            //            HyperlinkRelationship hr = mainPart.HyperlinkRelationships.Where(a => a.Id == relationId).FirstOrDefault();
+            //            if (hr != null)
+            //            // remove current relation
+            //            { mainPart.DeleteReferenceRelationship(hr); }
+            //            //add new relation with same Id , but new path
+            //            mainPart.AddHyperlinkRelationship(new System.Uri(@"D:\work\DOCS\new\My.docx", System.UriKind.Absolute), true, relationId);
+            //        }
+            //    }
+            //    // apply changes
+            //    doc.Close();
+            //}
+
+            //02  code demo
             using (WordprocessingDocument doc = WordprocessingDocument.Open(path, true))
             {
                 var body = doc.MainDocumentPart.Document.Body;
@@ -108,9 +137,26 @@ namespace ToDoWord
                 {
                     foreach (OpenXmlElement item in paragraph.Elements<OpenXmlElement>())
                     {
-                        if (item.InnerXml.Contains("HYPERLINK") || item.InnerXml.Contains("hyperlink"))
+                        if (item.InnerText.Contains("HYPERLINK") || item.InnerText.Contains("hyperlink"))
                         {
-                            item.Remove();
+                            Regex regexText = new Regex("[^\x00-\xff]");
+                            if (regexText.IsMatch(item.InnerText))
+                            {
+                                //01  copy this text 
+                                string thisInnerText = item.InnerText;
+                                //02  remove link
+                                Regex regexLink = new Regex("^((https|http|ftp|rtsp|mms)?:\\/\\/)[^\\s]+");
+                                foreach (Match item1 in regexLink.Matches(thisInnerText))
+                                {
+
+                                }
+                                //03  insert text at same place
+                            }
+                            else
+                            {
+                                item.Remove();
+                            }
+
                         }
                     }
                 }
@@ -133,11 +179,8 @@ namespace ToDoWord
                 var matches = regexText.Matches(docText);
                 foreach (Match item in matches)
                 {
-
-                }    
-                
-
-             docText = regexText.Replace(docText, "121212");
+                }
+                docText = regexText.Replace(docText, "121212");
 
                 using (StreamWriter sw = new StreamWriter(doc.MainDocumentPart.GetStream(FileMode.Create)))
                 {
@@ -182,6 +225,5 @@ namespace ToDoWord
             doc.Close(ref oMissing, ref oMissing, ref oMissing);
             word.Quit(ref oMissing, ref oMissing, ref oMissing);
         }
-
     }
 }
