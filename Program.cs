@@ -16,8 +16,8 @@ namespace ToDoWord
         {
             //01 check file dir
             Console.WriteLine("请输入文件夹路径:");
-            //string filePath = CheckPath();
-            string filePath = @"D:\迅雷下载";
+            string filePath = CheckPath();
+            //string filePath = @"D:\迅雷下载";
             Console.WriteLine("-----------------------");
 
             //02 trasn doc to docx
@@ -34,6 +34,7 @@ namespace ToDoWord
             Console.ReadKey();
         }
 
+        //recursion get path
         private static string CheckPath()
         {
             string path = Console.ReadLine();
@@ -139,24 +140,22 @@ namespace ToDoWord
                     {
                         if (item.InnerText.Contains("HYPERLINK") || item.InnerText.Contains("hyperlink"))
                         {
-                            Regex regexText = new Regex("[^\x00-\xff]");
+                            Regex regexText = new Regex("[\u4e00-\u9fa5]+");
                             if (regexText.IsMatch(item.InnerText))
                             {
-                                //01  copy this text 
-                                string thisInnerText = item.InnerText;
-                                //02  remove link
-                                Regex regexLink = new Regex("^((https|http|ftp|rtsp|mms)?:\\/\\/)[^\\s]+");
-                                foreach (Match item1 in regexLink.Matches(thisInnerText))
-                                {
+                                string thisInnerText = item.InnerText.Trim();
 
+                                //02  remove link
+                                Regex regexLink = new Regex("^HYPERLINK \\\"((https|http)?:\\/\\/)[^\\s]+");
+                                foreach (Match match in regexLink.Matches(thisInnerText.Trim()))
+                                {
+                                    item.InnerXml = thisInnerText.Replace(match.Value, "").Trim();
                                 }
-                                //03  insert text at same place
                             }
                             else
                             {
                                 item.Remove();
                             }
-
                         }
                     }
                 }
@@ -164,7 +163,7 @@ namespace ToDoWord
             }
         }
 
-        //find the text in the  doc
+        //find the text in the doc
         private static void FindReplaceText(string path)
         {
             using (WordprocessingDocument doc = WordprocessingDocument.Open(path, true))
@@ -189,6 +188,7 @@ namespace ToDoWord
             }
         }
 
+        //convert doc to docx
         private static void TranWordDocToDocx(string file)
         {
             Microsoft.Office.Interop.Word.Application word = new Microsoft.Office.Interop.Word.Application();
